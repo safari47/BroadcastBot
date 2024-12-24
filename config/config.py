@@ -23,7 +23,6 @@ class Settings(BaseSettings):
     FORMAT_LOG: str = "{time:YYYY-MM-DD at HH:mm:ss} | {level} | {message}"
     LOG_ROTATION: str = "10 MB"
     REDIS_PORT: int  # Порт для подключения к Redis
-    REDIS_PASSWORD: str  # Пароль для подключения к Redis
     REDIS_HOST: str  # Хост Redis-сервера
     REDIS_DB: int
     # Загрузка переменных из .env

@@ -28,52 +28,37 @@ async def broadcast_message_chat(group: List[str], message: str) -> None:
     Исключение:
         Функция не выбрасывает исключений, все ошибки обрабатываются локально.
     """
-    u_bot: Client = Client(
-        name=settings.LOGIN, api_id=settings.API_ID, api_hash=settings.API_HASH
-    )
+    u_bot: Client = Client(name=settings.LOGIN, api_id=settings.API_ID, api_hash=settings.API_HASH)
 
-    good: int = 0  # Количество успешно отправленных сообщений
-    bad: int = 0  # Количество ошибок при отправке
-    total: int = len(group)
+    good = 0
+    bad = 0
+    total = len(group)
 
-    # Асинхронная работа с клиентом Pyrogram
-    async with u_bot:
-        for idx, name in enumerate(group, start=1):
-            try:
-                # Извлекаем идентификатор чата из ссылки или имени
-                group_name: str = name.split("/")[-1]
-                chat: Chat = await u_bot.get_chat(group_name)
-                chat_id: int = chat.id
+    try:
+        async with u_bot:
+            for idx, name in enumerate(group, start=1):
+                try:
+                    group_name = name.split("/")[-1]
+                    chat = await u_bot.get_chat(group_name)
+                    chat_id = chat.id
+                    await u_bot.send_message(chat_id=chat_id, text=message)
+                    good += 1
+                    logger.info(f"Сообщение успешно отправлено в {group_name}")
+                except FloodWait as e:
+                    logger.warning(f"FloodWait: ожидание {e.value} секунд...")
+                    await asyncio.sleep(e.value)
+                except RPCError as e:
+                    bad += 1
+                    logger.error(f"RPC ошибка при отправке в {name}: {e}")
+                except Exception as e:
+                    bad += 1
+                    logger.exception(f"Непредвиденная ошибка в канале {name}: {e}")
+                await asyncio.sleep(5)
+    finally:
+        if u_bot.is_connected:
+            await u_bot.stop()
 
-                # Отправляем сообщение в чат
-                await u_bot.send_message(chat_id=chat_id, text=message)
-
-                # Увеличиваем счетчик успешных отправок
-                good += 1
-                logger.info(f"Сообщение успешно отправлено в {group_name}")
-
-            except FloodWait as e:
-                # Обрабатываем FloodWait (лимит частоты запросов)
-                logger.warning(f"FloodWait: ожидание {e.value} секунд...")
-                await asyncio.sleep(e.value)
-            except RPCError as e:
-                # Обработка ошибок от Pyrogram
-                bad += 1
-                logger.error(f"RPC ошибка при отправке в {name}: {e}")
-            except Exception as e:
-                # Обработка любых других ошибок
-                bad += 1
-                logger.exception(f"Непредвиденная ошибка в канале {name}: {e}")
-
-            # Добавляем фиксированную задержку между запросами для предотвращения блокировок
-            await asyncio.sleep(5)
-
-        # Итоговый результат рассылки
-        logger.info(f"Всего обработано: успешно {good}, ошибки {bad}, общее {total}")
-
-    # Останавливаем клиент Pyrogram
-    await u_bot.stop()
-
+    logger.info(f"Всего обработано: успешно {good}, ошибки {bad}, общее {total}")
 
 @broker.subscriber("broadcast_task_interval")
 async def broadcast_task(data: Dict[str, Any]) -> None:
