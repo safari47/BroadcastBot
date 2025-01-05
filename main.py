@@ -1,5 +1,4 @@
 import asyncio
-from aiogram import Dispatcher
 from aiogram.types import BotCommand, BotCommandScopeDefault
 from loguru import logger
 from handlers.start import router as admin_router
@@ -9,7 +8,6 @@ from handlers.broadcast import router as broadcast_router
 from handlers.task import router as task_router
 from config.config import bot, dp, app, scheduler
 from database.base import create_tables
-import uvloop
 
 
 # Функция, которая настроит командное меню (дефолтное для всех пользователей)

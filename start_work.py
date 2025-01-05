@@ -1,10 +1,11 @@
 from pyrogram import Client
+from config.config import settings
 
 
 bot = Client(
-    name='Roma_Netow',
-    api_id=12899868,
-    api_hash='46a9e48bd6eafcd78df7220bea131557',
-    phone_number='+79092839683',
+    name=settings.LOGIN,
+    api_id=settings.API_ID,
+    api_hash=settings.API_HASH,
+    phone_number=settings.PHONE,
 )
 bot.run()
