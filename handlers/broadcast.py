@@ -63,7 +63,6 @@ async def broadcast_time(message: Message, state: FSMContext):
     )
 
 
-
 @router.message(Broadcast.group)
 async def broadcast_group(message: Message, state: FSMContext):
     # Сохраняем введённую группу
@@ -123,7 +122,12 @@ async def broadcast_confirm(message: Message, state: FSMContext):
         group_name = data["group"]
         time = data["time"]
         group_list = await find_all(group_name=group_name)
-        data = {"group": group_list, "message": message_data, "time": time}
+        data = {
+            "group": group_list,
+            "message": message_data,
+            "time": time,
+            "group_name": group_name,
+        }
         if time.isdigit():
             await broker.publish(data, channel="broadcast_task_interval")
             await message.answer(

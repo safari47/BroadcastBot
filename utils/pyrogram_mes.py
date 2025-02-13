@@ -7,6 +7,7 @@ from pyrogram import Client
 from config.config import settings
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
+from pyrogram import enums
 
 
 async def broadcast_message_chat(group: List[str], message: str) -> None:
@@ -28,7 +29,9 @@ async def broadcast_message_chat(group: List[str], message: str) -> None:
     Исключение:
         Функция не выбрасывает исключений, все ошибки обрабатываются локально.
     """
-    u_bot: Client = Client(name=settings.LOGIN, api_id=settings.API_ID, api_hash=settings.API_HASH)
+    u_bot: Client = Client(
+        name=settings.LOGIN, api_id=settings.API_ID, api_hash=settings.API_HASH
+    )
 
     good = 0
     bad = 0
@@ -41,7 +44,12 @@ async def broadcast_message_chat(group: List[str], message: str) -> None:
                     group_name = name.split("/")[-1]
                     chat = await u_bot.get_chat(group_name)
                     chat_id = chat.id
-                    await u_bot.send_message(chat_id=chat_id, text=message)
+                    await u_bot.send_message(
+                        chat_id=chat_id,
+                        text=message,
+                        parse_mode=enums.ParseMode.MARKDOWN,
+                        disable_web_page_preview=True,
+                    )
                     good += 1
                     logger.info(f"Сообщение успешно отправлено в {group_name}")
                 except FloodWait as e:
@@ -52,13 +60,14 @@ async def broadcast_message_chat(group: List[str], message: str) -> None:
                     logger.error(f"RPC ошибка при отправке в {name}: {e}")
                 except Exception as e:
                     bad += 1
-                    logger.exception(f"Непредвиденная ошибка в канале {name}: {e}")
+                    logger.error(f"Непредвиденная ошибка в канале {name}: {e}")
                 await asyncio.sleep(5)
     finally:
         if u_bot.is_connected:
             await u_bot.stop()
 
     logger.info(f"Всего обработано: успешно {good}, ошибки {bad}, общее {total}")
+
 
 @broker.subscriber("broadcast_task_interval")
 async def broadcast_task(data: Dict[str, Any]) -> None:
@@ -77,14 +86,14 @@ async def broadcast_task(data: Dict[str, Any]) -> None:
     group_list: List[str] = data["group"]
     message: str = data["message"]
     time: int = int(data["time"])
-
+    group_name: str = data["group_name"]
     # Добавление задачи в планировщик с триггером на интервал
     scheduler.add_job(
         func=broadcast_message_chat,
         args=[group_list, message],
         trigger="interval",
         minutes=time,
-        name=f"Периодическая рассылка в {group_list}",
+        name=f"Периодическая рассылка в {group_name}",
     )
 
 
@@ -103,12 +112,12 @@ async def broadcast_task_now(data: Dict[str, Any]) -> None:
     run_time: datetime = datetime.now() + timedelta(seconds=5)
     group_list: List[str] = data["group"]
     message: str = data["message"]
-
+    group_name: str = data["group_name"]
     # Добавление задачи с фиксированной датой и временем выполнения
     scheduler.add_job(
         func=broadcast_message_chat,
         args=[group_list, message],
         trigger="date",
         run_date=run_time,
-        name=f"Немедленная рассылка в {group_list}",
+        name=f"Немедленная рассылка в {group_name}",
     )

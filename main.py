@@ -31,7 +31,7 @@ async def start_bot():
 async def stop_bot():
     logger.warning("Бот остановлен!")
     if scheduler.running:
-        scheduler.remove_all_jobs()
+        # scheduler.remove_all_jobs()
         scheduler.shutdown()  # Останавливаем планировщик при завершении
         logger.warning("APScheduler остановлен!")
 

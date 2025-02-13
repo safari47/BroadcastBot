@@ -5,7 +5,7 @@ pydantic_core
 loguru
 SQLAlchemy
 aiosqlite
-pyrogram
+kurigram==v2.1.36
 redis
 faststream
 apscheduler
